@@ -6,7 +6,11 @@ import 'dart:typed_data';
 import 'package:universal_ble/universal_ble.dart';
 
 import '../driver/printer_connection.dart';
+import '../utils/barcode_generator.dart';
+import '../utils/image_processor.dart';
 import 'esc_pos_commands.dart';
+import 'print_builder.dart';
+import 'templates.dart';
 import 'text_style.dart';
 
 /// High-level API for interacting with SK58 thermal printer.
@@ -144,6 +148,109 @@ class Sk58Printer {
     await _connection.writeCommands(commands);
   }
 
+  /// Prints a barcode.
+  ///
+  /// [data] - The data to encode in the barcode.
+  /// [type] - Type of barcode. Default is Code128.
+  /// [height] - Barcode height in dots (1-255). Default is 80.
+  /// [width] - Width multiplier (2-6). Default is 3.
+  /// [hriPosition] - Position of human readable text. Default is below.
+  /// [centered] - Whether to center the barcode. Default is true.
+  ///
+  /// Example:
+  /// ```dart
+  /// await printer.printBarcode('123456789012', BarcodeType.code128);
+  /// await printer.printBarcode('5901234123457', BarcodeType.ean13);
+  /// ```
+  ///
+  /// Throws [BarcodeException] if data is invalid for the barcode type.
+  Future<void> printBarcode(
+    String data, {
+    BarcodeType type = BarcodeType.code128,
+    int height = 80,
+    int width = 3,
+    BarcodeHriPosition hriPosition = BarcodeHriPosition.below,
+    bool centered = true,
+  }) async {
+    final config = BarcodeConfig(
+      height: height,
+      width: width,
+      hriPosition: hriPosition,
+    );
+
+    final List<int> commands = [];
+
+    // Set alignment if centering
+    if (centered) {
+      commands.addAll(EscPosCommands.alignCenter);
+    }
+
+    // Add barcode commands
+    commands.addAll(EscPosCommands.printBarcode(data, type, config: config));
+
+    // Add line feed after barcode
+    commands.addAll(EscPosCommands.lineFeed);
+
+    // Reset alignment to left
+    if (centered) {
+      commands.addAll(EscPosCommands.alignLeft);
+    }
+
+    await _connection.writeCommands(commands);
+  }
+
+  /// Prints an image.
+  ///
+  /// [imageBytes] - Raw image bytes (PNG, JPEG, GIF, etc.).
+  /// [maxWidth] - Maximum width in pixels. Default is 384 (full width for 58mm).
+  /// [dithering] - Apply Floyd-Steinberg dithering for better grayscale. Default is true.
+  /// [threshold] - Brightness threshold for B&W (0-255). Default is 128.
+  /// [centered] - Whether to center the image. Default is true.
+  ///
+  /// Example:
+  /// ```dart
+  /// final imageBytes = await File('logo.png').readAsBytes();
+  /// await printer.printImage(imageBytes);
+  /// await printer.printImage(imageBytes, maxWidth: 200); // smaller
+  /// ```
+  ///
+  /// Throws [ImageProcessingException] if image cannot be processed.
+  Future<void> printImage(
+    Uint8List imageBytes, {
+    int maxWidth = sk58MaxWidth,
+    bool dithering = true,
+    int threshold = 128,
+    bool centered = true,
+  }) async {
+    // Process image
+    final processed = Sk58ImageProcessor.processImage(
+      imageBytes,
+      maxWidth: maxWidth,
+      dithering: dithering,
+      threshold: threshold,
+    );
+
+    final List<int> commands = [];
+
+    // Center if needed
+    if (centered) {
+      commands.addAll(EscPosCommands.alignCenter);
+    }
+
+    // Add image commands
+    commands.addAll(processed.toCommands());
+
+    // Add line feed
+    commands.addAll(EscPosCommands.lineFeed);
+
+    // Reset alignment
+    if (centered) {
+      commands.addAll(EscPosCommands.alignLeft);
+    }
+
+    await _connection.writeCommands(commands);
+  }
+
   /// Feeds the specified number of lines.
   ///
   /// [count] - Number of lines to feed. Default is 1.
@@ -163,6 +270,43 @@ class Sk58Printer {
   Future<void> printLine({int width = 32, String char = '-'}) async {
     final line = char * width;
     await printText(line);
+  }
+
+  /// Prints a template (label, receipt, etc.).
+  ///
+  /// [template] - The template to print (Sk58Label, Sk58TwoColumnLabel, etc.).
+  ///
+  /// Example:
+  /// ```dart
+  /// await printer.printTemplate(
+  ///   Sk58Label(
+  ///     title: 'TORX 4x50',
+  ///     subtitle: 'Cap T20 - Inox A2',
+  ///     qrData: 'SKU-12345',
+  ///   ),
+  /// );
+  /// ```
+  Future<void> printTemplate(Sk58Template template) async {
+    final commands = template.toCommands();
+    await _connection.writeCommands(commands);
+  }
+
+  /// Creates a fluent print builder for complex print jobs.
+  ///
+  /// Example:
+  /// ```dart
+  /// await printer.build()
+  ///   .header('RECEIPT')
+  ///   .line()
+  ///   .row('Item 1', '\$10.00')
+  ///   .row('Item 2', '\$15.00')
+  ///   .doubleLine()
+  ///   .row('TOTAL', '\$25.00')
+  ///   .feed(3)
+  ///   .execute();
+  /// ```
+  Sk58PrintBuilder build() {
+    return Sk58PrintBuilder((commands) => printRaw(commands));
   }
 
   /// Prints raw ESC/POS commands.

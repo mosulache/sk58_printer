@@ -3,6 +3,8 @@ library;
 
 import 'dart:typed_data';
 
+import '../utils/barcode_generator.dart';
+
 /// ESC/POS command builder for SK58 printer.
 ///
 /// This class provides static methods to generate ESC/POS command bytes
@@ -141,6 +143,31 @@ class EscPosCommands {
     ]);
 
     return commands;
+  }
+
+  // ==========================================================================
+  // BARCODE
+  // ==========================================================================
+
+  /// Generate barcode print commands.
+  ///
+  /// [data] - The data to encode in the barcode.
+  /// [type] - Type of barcode (Code128, EAN13, UPC-A, Code39).
+  /// [config] - Barcode configuration (height, width, HRI position).
+  ///
+  /// Example:
+  /// ```dart
+  /// final commands = EscPosCommands.printBarcode(
+  ///   '123456789012',
+  ///   BarcodeType.code128,
+  /// );
+  /// ```
+  static List<int> printBarcode(
+    String data,
+    BarcodeType type, {
+    BarcodeConfig config = BarcodeConfig.defaultConfig,
+  }) {
+    return BarcodeCommands.printBarcode(data, type, config: config);
   }
 
   // ==========================================================================

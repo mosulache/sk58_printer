@@ -45,8 +45,21 @@ export 'src/driver/printer_connection.dart'
 
 // API layer (main public API)
 export 'src/api/esc_pos_commands.dart' show EscPosCommands;
+export 'src/api/print_builder.dart' show Sk58PrintBuilder;
 export 'src/api/printer.dart' show Sk58Printer, QrErrorCorrection;
+export 'src/api/templates.dart'
+    show Sk58Template, Sk58Label, Sk58TwoColumnLabel;
 export 'src/api/text_style.dart' show Sk58Align, Sk58FontSize, Sk58TextStyle;
+
+// Utils layer (barcode, image processing)
+export 'src/utils/barcode_generator.dart'
+    show BarcodeType, BarcodeHriPosition, BarcodeConfig, BarcodeException;
+export 'src/utils/image_processor.dart'
+    show
+        Sk58ImageProcessor,
+        ProcessedImage,
+        ImageProcessingException,
+        sk58MaxWidth;
 
 // Re-export BleDevice for convenience
 export 'package:universal_ble/universal_ble.dart' show BleDevice;

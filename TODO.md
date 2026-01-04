@@ -158,8 +158,8 @@ await printer.printText('Test'); // nu trimite nimic, doar loghează
 ### 8.1 Pregătire pentru pub.dev
 - [ ] Verificare scor `pana` (dart pub publish --dry-run)
 - [ ] Adăugare LICENSE
-- [ ] Screenshots în README
-- [ ] Exemple complete
+- [x] Screenshots în README (folder `screenshots/` creat, README actualizat)
+- [x] Exemple complete (README.md actualizat cu toate exemplele)
 
 ### 8.2 Publicare
 ```bash

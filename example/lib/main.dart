@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:sk58_printer/sk58_printer.dart';
 
+import 'screens/barcode_demo.dart';
+import 'screens/basic_print.dart';
+import 'screens/builder_demo.dart';
+import 'screens/image_demo.dart';
+import 'screens/labels_demo.dart';
+import 'widgets/printer_status.dart';
+
 void main() {
   runApp(const Sk58PrinterExampleApp());
 }
 
-/// Example app widget demonstrating sk58_printer library usage.
+/// Example app demonstrating all sk58_printer library features.
 class Sk58PrinterExampleApp extends StatelessWidget {
   /// Creates the example app.
   const Sk58PrinterExampleApp({super.key});
@@ -13,42 +20,56 @@ class Sk58PrinterExampleApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'SK58 Printer Example',
+      title: 'SK58 Printer Demo',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.indigo,
+          brightness: Brightness.light,
+        ),
         useMaterial3: true,
       ),
-      home: const PrinterScreen(),
+      darkTheme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.indigo,
+          brightness: Brightness.dark,
+        ),
+        useMaterial3: true,
+      ),
+      home: const MainScreen(),
     );
   }
 }
 
-/// Main screen widget for printer operations.
-class PrinterScreen extends StatefulWidget {
-  /// Creates the printer screen.
-  const PrinterScreen({super.key});
+/// Main screen with tab navigation.
+class MainScreen extends StatefulWidget {
+  /// Creates the main screen.
+  const MainScreen({super.key});
 
   @override
-  State<PrinterScreen> createState() => _PrinterScreenState();
+  State<MainScreen> createState() => _MainScreenState();
 }
 
-class _PrinterScreenState extends State<PrinterScreen> {
-  final TextEditingController _textController = TextEditingController();
+class _MainScreenState extends State<MainScreen> {
   final Sk58Scanner _scanner = Sk58Scanner();
 
   String _status = 'Not connected';
   List<BleDevice> _devices = [];
   bool _isScanning = false;
   Sk58Printer? _printer;
-  bool _isPrinting = false;
+  int _currentIndex = 0;
+
+  final List<_TabItem> _tabs = const [
+    _TabItem(icon: Icons.text_fields, label: 'Text'),
+    _TabItem(icon: Icons.qr_code_2, label: 'Barcode'),
+    _TabItem(icon: Icons.label, label: 'Labels'),
+    _TabItem(icon: Icons.image, label: 'Image'),
+    _TabItem(icon: Icons.construction, label: 'Builder'),
+  ];
 
   @override
   void initState() {
     super.initState();
-    _textController.text = 'SK58 Printer Test';
-
-    // Listen for discovered devices
     _scanner.deviceStream.listen((device) {
       if (mounted) {
         setState(() {
@@ -64,7 +85,6 @@ class _PrinterScreenState extends State<PrinterScreen> {
   void dispose() {
     _scanner.dispose();
     _printer?.disconnect();
-    _textController.dispose();
     super.dispose();
   }
 
@@ -85,7 +105,7 @@ class _PrinterScreenState extends State<PrinterScreen> {
       return;
     }
 
-    // Wait for scan to complete
+    // Wait for scan
     await Future.delayed(const Duration(seconds: 10));
 
     if (mounted) {
@@ -131,201 +151,70 @@ class _PrinterScreenState extends State<PrinterScreen> {
     });
   }
 
-  Future<void> _printLabel() async {
-    if (_printer == null || _isPrinting) return;
-
-    final text = _textController.text;
-    if (text.isEmpty) {
-      _showMessage('Please enter some text');
-      return;
+  Widget _buildCurrentScreen() {
+    switch (_currentIndex) {
+      case 0:
+        return BasicPrintScreen(printer: _printer);
+      case 1:
+        return BarcodeDemoScreen(printer: _printer);
+      case 2:
+        return LabelsDemoScreen(printer: _printer);
+      case 3:
+        return ImageDemoScreen(printer: _printer);
+      case 4:
+        return BuilderDemoScreen(printer: _printer);
+      default:
+        return BasicPrintScreen(printer: _printer);
     }
-
-    setState(() {
-      _isPrinting = true;
-      _status = 'Printing...';
-    });
-
-    try {
-      // Print QR code centered
-      await _printer!.printQrCode(text);
-
-      // Print text below QR
-      await _printer!.printText(text, align: Sk58Align.center);
-
-      // Feed some paper
-      await _printer!.feedLines(3);
-
-      setState(() {
-        _status = 'Print complete!';
-      });
-      _showMessage('Print successful!');
-    } catch (e) {
-      setState(() {
-        _status = 'Print error: $e';
-      });
-      _showMessage('Print failed: $e');
-    } finally {
-      setState(() {
-        _isPrinting = false;
-      });
-    }
-  }
-
-  void _showMessage(String message) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final isConnected = _printer?.isConnected == true;
-
     return Scaffold(
       appBar: AppBar(
-        title: const Text('SK58 Printer Demo'),
+        title: const Text('SK58 Printer'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        actions: [
-          if (_isScanning)
-            const Padding(
-              padding: EdgeInsets.only(right: 16.0),
-              child: Center(
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-              ),
-            ),
-          if (isConnected)
-            IconButton(
-              icon: const Icon(Icons.bluetooth_disabled),
-              tooltip: 'Disconnect',
-              onPressed: _disconnect,
-            ),
-        ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Status
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  children: [
-                    Icon(
-                      isConnected
-                          ? Icons.bluetooth_connected
-                          : Icons.bluetooth_disabled,
-                      color: isConnected ? Colors.green : Colors.grey,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        _status,
-                        style: Theme.of(context).textTheme.bodyLarge,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Text input
-            TextField(
-              controller: _textController,
-              decoration: const InputDecoration(
-                labelText: 'Text to print (also used for QR)',
-                border: OutlineInputBorder(),
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Scan button
-            ElevatedButton.icon(
-              onPressed: _isScanning || _status.contains('Connecting')
-                  ? null
-                  : _startScan,
-              icon: const Icon(Icons.search),
-              label: Text(_isScanning ? 'Scanning...' : 'Scan for Printers'),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Device list
-            Expanded(
-              child: Card(
-                child: _devices.isEmpty
-                    ? Center(
-                        child: Text(
-                          _isScanning
-                              ? 'Searching for devices...'
-                              : 'No devices found.\nTap "Scan" to search.',
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                      )
-                    : ListView.builder(
-                        itemCount: _devices.length,
-                        itemBuilder: (context, index) {
-                          final device = _devices[index];
-                          final isThisConnected =
-                              _printer?.device?.deviceId == device.deviceId;
-                          final name = device.name?.isNotEmpty == true
-                              ? device.name!
-                              : 'Unknown Device';
-
-                          return ListTile(
-                            leading: Icon(
-                              isThisConnected
-                                  ? Icons.bluetooth_connected
-                                  : Icons.bluetooth,
-                              color: isThisConnected ? Colors.blue : null,
-                            ),
-                            title: Text(name),
-                            subtitle: Text(device.deviceId),
-                            trailing: isThisConnected
-                                ? const Chip(label: Text('Connected'))
-                                : null,
-                            onTap: isThisConnected
-                                ? null
-                                : () => _connectTo(device),
-                          );
-                        },
-                      ),
-              ),
-            ),
-          ],
-        ),
-      ),
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: ElevatedButton.icon(
-            onPressed: isConnected && !_isPrinting ? _printLabel : null,
-            icon: _isPrinting
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.print),
-            label: Text(_isPrinting ? 'Printing...' : 'Print Label'),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              foregroundColor: Theme.of(context).colorScheme.onPrimary,
+      body: Column(
+        children: [
+          // Printer status at the top
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: PrinterStatus(
+              status: _status,
+              printer: _printer,
+              isScanning: _isScanning,
+              devices: _devices,
+              onScan: _startScan,
+              onConnect: _connectTo,
+              onDisconnect: _disconnect,
             ),
           ),
-        ),
+
+          // Current tab content
+          Expanded(child: _buildCurrentScreen()),
+        ],
+      ),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _currentIndex,
+        onDestinationSelected: (index) {
+          setState(() => _currentIndex = index);
+        },
+        destinations: _tabs
+            .map((tab) => NavigationDestination(
+                  icon: Icon(tab.icon),
+                  label: tab.label,
+                ))
+            .toList(),
       ),
     );
   }
+}
+
+/// Tab item data.
+class _TabItem {
+  final IconData icon;
+  final String label;
+
+  const _TabItem({required this.icon, required this.label});
 }

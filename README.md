@@ -204,6 +204,8 @@ sudo apt install bluez
 sudo usermod -a -G bluetooth $USER
 ```
 
+!! linux support requires more testing / documentation
+
 ## Example App
 
 The `example/` folder contains a complete demo app with:

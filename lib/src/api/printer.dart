@@ -5,10 +5,12 @@ import 'dart:typed_data';
 
 import 'package:universal_ble/universal_ble.dart';
 
+import '../driver/printer_config.dart';
 import '../driver/printer_connection.dart';
 import '../utils/barcode_generator.dart';
 import '../utils/image_processor.dart';
 import 'esc_pos_commands.dart';
+import 'label_commands.dart';
 import 'print_builder.dart';
 import 'templates.dart';
 import 'text_style.dart';
@@ -332,6 +334,122 @@ class Sk58Printer {
   Future<void> disconnect() async {
     await _connection.disconnect();
   }
+
+  // ==========================================================================
+  // LABEL PRINTING METHODS
+  // ==========================================================================
+
+  /// Configure printer for label printing.
+  ///
+  /// [labelSize] - Predefined label size from [Sk58LabelSize].
+  /// [paperType] - Paper type (gap or black mark detection).
+  /// [density] - Print density 1-5 (default 3).
+  /// [speed] - Print speed 1-3 (default 2).
+  ///
+  /// Example:
+  /// ```dart
+  /// await printer.configureForLabel(
+  ///   Sk58LabelSize.label50x30,
+  ///   paperType: Sk58PaperType.labelWithGap,
+  /// );
+  /// await printer.printText('Product Name');
+  /// await printer.feedToNextLabel();
+  /// ```
+  Future<void> configureForLabel(
+    Sk58LabelSize labelSize, {
+    Sk58PaperType paperType = Sk58PaperType.labelWithGap,
+    int density = 3,
+    int speed = 2,
+  }) async {
+    final config = LabelPrintConfig(
+      paperType: paperType,
+      widthMm: labelSize.widthMm.toDouble(),
+      heightMm: labelSize.heightMm.toDouble(),
+      density: density,
+      speed: speed,
+    );
+    await _connection.writeCommands(config.toCommands());
+  }
+
+  /// Configure printer for custom label size.
+  ///
+  /// [widthMm] - Label width in mm (max printable: 48mm).
+  /// [heightMm] - Label height in mm.
+  /// [paperType] - Paper type (gap or black mark detection).
+  /// [density] - Print density 1-5 (default 3).
+  /// [speed] - Print speed 1-3 (default 2).
+  Future<void> configureForCustomLabel({
+    required double widthMm,
+    required double heightMm,
+    Sk58PaperType paperType = Sk58PaperType.labelWithGap,
+    int density = 3,
+    int speed = 2,
+  }) async {
+    final config = LabelPrintConfig(
+      paperType: paperType,
+      widthMm: widthMm,
+      heightMm: heightMm,
+      density: density,
+      speed: speed,
+    );
+    await _connection.writeCommands(config.toCommands());
+  }
+
+  /// Set paper type for label detection.
+  ///
+  /// [type] - Paper type: continuous, gap detection, or black mark.
+  Future<void> setPaperType(Sk58PaperType type) async {
+    await _connection.writeCommands(LabelCommands.setPaperType(type));
+  }
+
+  /// Feed paper to the next label.
+  ///
+  /// In label mode, this advances to the next label gap/mark.
+  /// In continuous mode, this acts as a form feed/page break.
+  Future<void> feedToNextLabel() async {
+    await _connection.writeCommands(LabelCommands.feedToNextLabel);
+  }
+
+  /// Calibrate label detection.
+  ///
+  /// Call this after loading new paper to help the printer
+  /// detect label boundaries correctly.
+  Future<void> calibrateLabels() async {
+    await _connection.writeCommands(LabelCommands.calibrateLabels);
+  }
+
+  /// Set print density (darkness).
+  ///
+  /// [level] - Density level 1-5 (1=lightest, 5=darkest).
+  Future<void> setDensity(int level) async {
+    await _connection.writeCommands(LabelCommands.setPrintDensity(level));
+  }
+
+  /// Set print speed.
+  ///
+  /// [level] - Speed level 1-3 (1=slowest/best quality, 3=fastest).
+  Future<void> setSpeed(int level) async {
+    await _connection.writeCommands(LabelCommands.setPrintSpeed(level));
+  }
+
+  /// Set print rotation.
+  ///
+  /// [degrees] - Rotation: 0, 90, 180, or 270 degrees.
+  Future<void> setRotation(int degrees) async {
+    await _connection.writeCommands(LabelCommands.setRotation(degrees));
+  }
+
+  /// Get characters per line for a label size.
+  ///
+  /// Useful for calculating text wrapping and formatting.
+  int getCharsPerLine(Sk58LabelSize labelSize) {
+    return labelSize.charsPerLine;
+  }
+
+  /// Get characters per line for current effective print width.
+  ///
+  /// Returns 32 characters (for 48mm / 384 dots at 12 dots/char).
+  int get maxCharsPerLine => Sk58Specs.charsPerLine(Sk58Specs.effectivePrintWidthMm);
 }
 
 /// QR code error correction levels.

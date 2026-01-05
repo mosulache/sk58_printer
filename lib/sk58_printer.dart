@@ -42,9 +42,13 @@ export 'src/driver/permissions.dart'
     show Sk58Permissions, Sk58PermissionResult;
 export 'src/driver/printer_connection.dart'
     show Sk58Connection, Sk58ConnectionException;
+export 'src/driver/printer_config.dart'
+    show Sk58Specs, Sk58LabelSize, Sk58CustomLabel, BlackMarkPositions;
 
 // API layer (main public API)
 export 'src/api/esc_pos_commands.dart' show EscPosCommands;
+export 'src/api/label_commands.dart'
+    show LabelCommands, LabelPrintConfig, Sk58PaperType;
 export 'src/api/print_builder.dart' show Sk58PrintBuilder;
 export 'src/api/printer.dart' show Sk58Printer, QrErrorCorrection;
 export 'src/api/templates.dart'

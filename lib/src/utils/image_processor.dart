@@ -5,7 +5,12 @@ import 'dart:typed_data';
 
 import 'package:image/image.dart' as img;
 
-/// Maximum print width for 58mm thermal paper (384 dots at 203 DPI).
+/// Maximum effective print width for SK58 printer.
+///
+/// The SK58 has a 48mm effective printing width (not 58mm paper width).
+/// At 203 DPI (8 dots/mm): 48mm × 8 = 384 dots.
+///
+/// Note: Even with 50mm label paper, max printable width is still 48mm/384 dots.
 const int sk58MaxWidth = 384;
 
 /// Image processor for converting images to printer-compatible format.

@@ -43,3 +43,6 @@ app.*.map.json
 
 # Coverage
 coverage/
+
+# Manual PDF
+7507756.pdf

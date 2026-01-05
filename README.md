@@ -195,7 +195,7 @@ The `example/` folder contains a complete demo app with:
 - Text printing with styles
 - Barcode printing (all types)
 - Image printing with dithering options
-- Label templates
+- Simple Label templates
 - Builder pattern demos
 
 Run it:
@@ -229,6 +229,15 @@ flutter run
 | `startScan()` | Start scanning for devices |
 | `stopScan()` | Stop scanning |
 | `deviceStream` | Stream of discovered devices |
+
+## Third-Party Licenses
+
+This project uses the following open-source libraries:
+
+- **[universal_ble](https://pub.dev/packages/universal_ble)** - BSD-3-Clause License ([license](https://opensource.org/licenses/BSD-3-Clause))
+- **[permission_handler](https://pub.dev/packages/permission_handler)** - MIT License ([license](https://opensource.org/licenses/MIT))
+- **[image](https://pub.dev/packages/image)** - MIT License ([license](https://opensource.org/licenses/MIT))
+- **[flutter_lints](https://pub.dev/packages/flutter_lints)** - BSD-3-Clause License ([license](https://opensource.org/licenses/BSD-3-Clause))
 
 ## License
 

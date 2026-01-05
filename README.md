@@ -38,9 +38,24 @@ Add to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
+  sk58_printer: ^0.1.0
+```
+
+Then run:
+
+```bash
+flutter pub get
+```
+
+### From Git (development version)
+
+If you want to use the latest development version from GitHub:
+
+```yaml
+dependencies:
   sk58_printer:
     git:
-      url: https://github.com/mosu/sk58_printer.git
+      url: https://github.com/mosulache/sk58_printer.git
       ref: main
 ```
 

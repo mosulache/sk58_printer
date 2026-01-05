@@ -186,11 +186,13 @@ class Sk58Connection {
           BleOutputProperty.withoutResponse,
         );
 
-        debugPrint('SK58: Sent chunk ${(i ~/ chunkSize) + 1}: ${chunk.length} bytes');
+        debugPrint(
+            'SK58: Sent chunk ${(i ~/ chunkSize) + 1}: ${chunk.length} bytes');
 
         // Delay between chunks
         if (end < totalBytes) {
-          await Future.delayed(const Duration(milliseconds: Sk58Constants.chunkDelayMs));
+          await Future.delayed(
+              const Duration(milliseconds: Sk58Constants.chunkDelayMs));
         }
       } catch (e) {
         debugPrint('SK58: Error writing chunk: $e');

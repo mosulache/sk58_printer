@@ -54,9 +54,8 @@ class Sk58Specs {
   ///
   /// Limited by effective print width (48mm).
   static int charsPerLine(double widthMm) {
-    final effectiveWidth = widthMm > effectivePrintWidthMm
-        ? effectivePrintWidthMm
-        : widthMm;
+    final effectiveWidth =
+        widthMm > effectivePrintWidthMm ? effectivePrintWidthMm : widthMm;
     return (effectiveWidth * dotsPerMm / charWidthDots).floor();
   }
 }

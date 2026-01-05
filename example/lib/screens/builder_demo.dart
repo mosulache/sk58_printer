@@ -22,27 +22,31 @@ class _BuilderDemoScreenState extends State<BuilderDemoScreen> {
     setState(() => _isPrinting = true);
 
     try {
-      await widget.printer!.build()
-        .header('DEMO STORE')
-        .text('123 Main Street', align: Sk58Align.center)
-        .text('Tel: 555-1234', align: Sk58Align.center)
-        .doubleLine()
-        .text('RECEIPT', style: Sk58TextStyle.boldStyle, align: Sk58Align.center)
-        .line()
-        .row('Coffee', '\$3.50')
-        .row('Sandwich', '\$8.00')
-        .row('Cookie', '\$2.50')
-        .line()
-        .row('Subtotal', '\$14.00')
-        .row('Tax (10%)', '\$1.40')
-        .doubleLine()
-        .bold('TOTAL')
-        .text('\$15.40', style: const Sk58TextStyle(size: Sk58FontSize.large), align: Sk58Align.right)
-        .feed(1)
-        .text('Thank you!', align: Sk58Align.center)
-        .qrCode('https://demo-store.example.com/receipt/12345')
-        .feed(3)
-        .execute();
+      await widget.printer!
+          .build()
+          .header('DEMO STORE')
+          .text('123 Main Street', align: Sk58Align.center)
+          .text('Tel: 555-1234', align: Sk58Align.center)
+          .doubleLine()
+          .text('RECEIPT',
+              style: Sk58TextStyle.boldStyle, align: Sk58Align.center)
+          .line()
+          .row('Coffee', '\$3.50')
+          .row('Sandwich', '\$8.00')
+          .row('Cookie', '\$2.50')
+          .line()
+          .row('Subtotal', '\$14.00')
+          .row('Tax (10%)', '\$1.40')
+          .doubleLine()
+          .bold('TOTAL')
+          .text('\$15.40',
+              style: const Sk58TextStyle(size: Sk58FontSize.large),
+              align: Sk58Align.right)
+          .feed(1)
+          .text('Thank you!', align: Sk58Align.center)
+          .qrCode('https://demo-store.example.com/receipt/12345')
+          .feed(3)
+          .execute();
 
       _showMessage('Receipt printed!');
     } catch (e) {
@@ -58,16 +62,17 @@ class _BuilderDemoScreenState extends State<BuilderDemoScreen> {
     setState(() => _isPrinting = true);
 
     try {
-      await widget.printer!.build()
-        .header('WAREHOUSE')
-        .line()
-        .text('Product: Widget Pro X')
-        .text('SKU: WPX-2024-001')
-        .text('Location: A-15-3')
-        .newLine()
-        .barcode('WPX2024001', type: BarcodeType.code128, height: 60)
-        .feed(3)
-        .execute();
+      await widget.printer!
+          .build()
+          .header('WAREHOUSE')
+          .line()
+          .text('Product: Widget Pro X')
+          .text('SKU: WPX-2024-001')
+          .text('Location: A-15-3')
+          .newLine()
+          .barcode('WPX2024001', type: BarcodeType.code128, height: 60)
+          .feed(3)
+          .execute();
 
       _showMessage('Label printed!');
     } catch (e) {
@@ -87,49 +92,44 @@ class _BuilderDemoScreenState extends State<BuilderDemoScreen> {
       final builder = widget.printer!.build();
 
       // Header section
-      builder
-        .text('=' * 32)
-        .header('CUSTOM PRINT')
-        .text('=' * 32);
+      builder.text('=' * 32).header('CUSTOM PRINT').text('=' * 32);
 
       // Different alignments
       builder
-        .feed(1)
-        .text('Left aligned')
-        .text('Center aligned', align: Sk58Align.center)
-        .text('Right aligned', align: Sk58Align.right);
+          .feed(1)
+          .text('Left aligned')
+          .text('Center aligned', align: Sk58Align.center)
+          .text('Right aligned', align: Sk58Align.right);
 
       // Different sizes
       builder
-        .feed(1)
-        .text('Normal size')
-        .text('Wide', style: const Sk58TextStyle(size: Sk58FontSize.wide))
-        .text('Tall', style: const Sk58TextStyle(size: Sk58FontSize.tall))
-        .text('Large', style: const Sk58TextStyle(size: Sk58FontSize.large));
+          .feed(1)
+          .text('Normal size')
+          .text('Wide', style: const Sk58TextStyle(size: Sk58FontSize.wide))
+          .text('Tall', style: const Sk58TextStyle(size: Sk58FontSize.tall))
+          .text('Large', style: const Sk58TextStyle(size: Sk58FontSize.large));
 
       // Styles
       builder
-        .feed(1)
-        .bold('Bold text')
-        .text('Underlined', style: const Sk58TextStyle(underline: true))
-        .text('Bold + Underline', style: const Sk58TextStyle(bold: true, underline: true));
+          .feed(1)
+          .bold('Bold text')
+          .text('Underlined', style: const Sk58TextStyle(underline: true))
+          .text('Bold + Underline',
+              style: const Sk58TextStyle(bold: true, underline: true));
 
       // Two-column rows
       builder
-        .feed(1)
-        .line()
-        .row('Item', 'Price')
-        .line(char: '.')
-        .row('Apple', '\$1.00')
-        .row('Orange', '\$1.50')
-        .row('Banana', '\$0.75')
-        .line();
+          .feed(1)
+          .line()
+          .row('Item', 'Price')
+          .line(char: '.')
+          .row('Apple', '\$1.00')
+          .row('Orange', '\$1.50')
+          .row('Banana', '\$0.75')
+          .line();
 
       // QR at the end
-      builder
-        .feed(1)
-        .qrCode('Builder Pattern Demo', size: 6)
-        .feed(3);
+      builder.feed(1).qrCode('Builder Pattern Demo', size: 6).feed(3);
 
       await builder.execute();
       _showMessage('Custom print complete!');
@@ -215,9 +215,8 @@ class _BuilderDemoScreenState extends State<BuilderDemoScreen> {
                     title: const Text('Receipt'),
                     subtitle: const Text('Store receipt with items and total'),
                     trailing: ElevatedButton(
-                      onPressed: isConnected && !_isPrinting
-                          ? _printReceipt
-                          : null,
+                      onPressed:
+                          isConnected && !_isPrinting ? _printReceipt : null,
                       child: const Text('Print'),
                     ),
                   ),
@@ -230,9 +229,8 @@ class _BuilderDemoScreenState extends State<BuilderDemoScreen> {
                     title: const Text('Warehouse Label'),
                     subtitle: const Text('Product label with barcode'),
                     trailing: ElevatedButton(
-                      onPressed: isConnected && !_isPrinting
-                          ? _printLabel
-                          : null,
+                      onPressed:
+                          isConnected && !_isPrinting ? _printLabel : null,
                       child: const Text('Print'),
                     ),
                   ),
@@ -245,9 +243,8 @@ class _BuilderDemoScreenState extends State<BuilderDemoScreen> {
                     title: const Text('Feature Showcase'),
                     subtitle: const Text('All text styles and options'),
                     trailing: ElevatedButton(
-                      onPressed: isConnected && !_isPrinting
-                          ? _printCustom
-                          : null,
+                      onPressed:
+                          isConnected && !_isPrinting ? _printCustom : null,
                       child: const Text('Print'),
                     ),
                   ),

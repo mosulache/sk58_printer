@@ -35,11 +35,9 @@
 library;
 
 // Driver layer (for advanced users)
-export 'src/driver/bluetooth_scanner.dart'
-    show Sk58Scanner, Sk58ScanException;
+export 'src/driver/bluetooth_scanner.dart' show Sk58Scanner, Sk58ScanException;
 export 'src/driver/constants.dart' show Sk58Constants;
-export 'src/driver/permissions.dart'
-    show Sk58Permissions, Sk58PermissionResult;
+export 'src/driver/permissions.dart' show Sk58Permissions, Sk58PermissionResult;
 export 'src/driver/printer_connection.dart'
     show Sk58Connection, Sk58ConnectionException;
 export 'src/driver/printer_config.dart'

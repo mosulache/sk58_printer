@@ -104,15 +104,18 @@ class _BarcodeDemoScreenState extends State<BarcodeDemoScreen> {
 
       // Code 128
       await widget.printer!.printText('Code 128:', align: Sk58Align.center);
-      await widget.printer!.printBarcode('ABC-12345', type: BarcodeType.code128);
+      await widget.printer!
+          .printBarcode('ABC-12345', type: BarcodeType.code128);
 
       // EAN-13
       await widget.printer!.printText('EAN-13:', align: Sk58Align.center);
-      await widget.printer!.printBarcode('5901234123457', type: BarcodeType.ean13);
+      await widget.printer!
+          .printBarcode('5901234123457', type: BarcodeType.ean13);
 
       // UPC-A
       await widget.printer!.printText('UPC-A:', align: Sk58Align.center);
-      await widget.printer!.printBarcode('012345678905', type: BarcodeType.upcA);
+      await widget.printer!
+          .printBarcode('012345678905', type: BarcodeType.upcA);
 
       // Code 39
       await widget.printer!.printText('Code 39:', align: Sk58Align.center);
@@ -280,7 +283,8 @@ class _BarcodeDemoScreenState extends State<BarcodeDemoScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: isConnected && !_isPrinting ? _printAllTypes : null,
+                  onPressed:
+                      isConnected && !_isPrinting ? _printAllTypes : null,
                   icon: const Icon(Icons.list),
                   label: const Text('Print All'),
                   style: OutlinedButton.styleFrom(

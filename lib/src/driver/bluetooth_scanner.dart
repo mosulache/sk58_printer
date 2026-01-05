@@ -38,7 +38,8 @@ class Sk58Scanner {
   Stream<BleDevice> get deviceStream => _deviceController.stream;
 
   /// List of all discovered devices during the current or last scan.
-  List<BleDevice> get discoveredDevices => List.unmodifiable(_discoveredDevices);
+  List<BleDevice> get discoveredDevices =>
+      List.unmodifiable(_discoveredDevices);
 
   /// Whether the scanner is currently scanning.
   bool get isScanning => _isScanning;

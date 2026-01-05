@@ -41,13 +41,17 @@ void main() {
 
     test('setCharacterSize clamps values correctly', () {
       // Normal size
-      expect(EscPosCommands.setCharacterSize(width: 1, height: 1), [0x1D, 0x21, 0x00]);
+      expect(EscPosCommands.setCharacterSize(width: 1, height: 1),
+          [0x1D, 0x21, 0x00]);
       // Double width
-      expect(EscPosCommands.setCharacterSize(width: 2, height: 1), [0x1D, 0x21, 0x10]);
+      expect(EscPosCommands.setCharacterSize(width: 2, height: 1),
+          [0x1D, 0x21, 0x10]);
       // Double height
-      expect(EscPosCommands.setCharacterSize(width: 1, height: 2), [0x1D, 0x21, 0x01]);
+      expect(EscPosCommands.setCharacterSize(width: 1, height: 2),
+          [0x1D, 0x21, 0x01]);
       // Double both
-      expect(EscPosCommands.setCharacterSize(width: 2, height: 2), [0x1D, 0x21, 0x11]);
+      expect(EscPosCommands.setCharacterSize(width: 2, height: 2),
+          [0x1D, 0x21, 0x11]);
     });
 
     test('encodeText encodes ASCII correctly', () {
@@ -57,15 +61,15 @@ void main() {
 
     test('printQrCode generates valid command sequence', () {
       final commands = EscPosCommands.printQrCode('TEST');
-      
+
       // Should start with model select command
       expect(commands.sublist(0, 4), [0x1D, 0x28, 0x6B, 0x04]);
-      
+
       // Should contain the data 'TEST'
       expect(commands.contains(84), isTrue); // 'T'
       expect(commands.contains(69), isTrue); // 'E'
       expect(commands.contains(83), isTrue); // 'S'
-      
+
       // Should end with print command
       expect(commands.sublist(commands.length - 3), [0x31, 0x51, 0x30]);
     });
@@ -90,7 +94,7 @@ void main() {
     test('copyWith creates new instance with modifications', () {
       const original = Sk58TextStyle();
       final modified = original.copyWith(bold: true);
-      
+
       expect(original.bold, isFalse);
       expect(modified.bold, isTrue);
     });
@@ -99,7 +103,7 @@ void main() {
       const style1 = Sk58TextStyle(bold: true);
       const style2 = Sk58TextStyle(bold: true);
       const style3 = Sk58TextStyle(bold: false);
-      
+
       expect(style1, equals(style2));
       expect(style1, isNot(equals(style3)));
     });
@@ -117,16 +121,16 @@ void main() {
     test('font sizes have correct multipliers', () {
       expect(Sk58FontSize.normal.widthMultiplier, 1);
       expect(Sk58FontSize.normal.heightMultiplier, 1);
-      
+
       expect(Sk58FontSize.wide.widthMultiplier, 2);
       expect(Sk58FontSize.wide.heightMultiplier, 1);
-      
+
       expect(Sk58FontSize.tall.widthMultiplier, 1);
       expect(Sk58FontSize.tall.heightMultiplier, 2);
-      
+
       expect(Sk58FontSize.large.widthMultiplier, 2);
       expect(Sk58FontSize.large.heightMultiplier, 2);
-      
+
       expect(Sk58FontSize.extraLarge.widthMultiplier, 3);
       expect(Sk58FontSize.extraLarge.heightMultiplier, 3);
     });
@@ -136,11 +140,13 @@ void main() {
     test('UUIDs are valid format', () {
       expect(
         Sk58Constants.printerServiceUuid,
-        matches(RegExp(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$')),
+        matches(RegExp(
+            r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$')),
       );
       expect(
         Sk58Constants.printerCharacteristicUuid,
-        matches(RegExp(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$')),
+        matches(RegExp(
+            r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$')),
       );
     });
 

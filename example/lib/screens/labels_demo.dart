@@ -21,7 +21,8 @@ class _LabelsDemoScreenState extends State<LabelsDemoScreen> {
   Sk58PaperType _paperType = Sk58PaperType.labelWithGap;
   int _density = 3;
   int _speed = 2;
-  bool _useAdvancedCommands = false; // Off by default - many printers don't support
+  bool _useAdvancedCommands =
+      false; // Off by default - many printers don't support
 
   // Simple label fields
   final _titleController = TextEditingController(text: 'TORX 4x50');
@@ -33,7 +34,10 @@ class _LabelsDemoScreenState extends State<LabelsDemoScreen> {
   // Two-column label fields
   final List<(TextEditingController key, TextEditingController value)> _rows = [
     (TextEditingController(text: 'Type'), TextEditingController(text: 'TORX')),
-    (TextEditingController(text: 'Size'), TextEditingController(text: '4x50mm')),
+    (
+      TextEditingController(text: 'Size'),
+      TextEditingController(text: '4x50mm')
+    ),
     (TextEditingController(text: 'Head'), TextEditingController(text: 'T20')),
   ];
 
@@ -231,7 +235,9 @@ class _LabelsDemoScreenState extends State<LabelsDemoScreen> {
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: sizes50.map((size) => _buildSizeChip(size, colorScheme)).toList(),
+              children: sizes50
+                  .map((size) => _buildSizeChip(size, colorScheme))
+                  .toList(),
             ),
 
             const SizedBox(height: 12),
@@ -240,7 +246,9 @@ class _LabelsDemoScreenState extends State<LabelsDemoScreen> {
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: sizes40.map((size) => _buildSizeChip(size, colorScheme)).toList(),
+              children: sizes40
+                  .map((size) => _buildSizeChip(size, colorScheme))
+                  .toList(),
             ),
 
             const SizedBox(height: 12),
@@ -249,7 +257,9 @@ class _LabelsDemoScreenState extends State<LabelsDemoScreen> {
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: sizes30.map((size) => _buildSizeChip(size, colorScheme)).toList(),
+              children: sizes30
+                  .map((size) => _buildSizeChip(size, colorScheme))
+                  .toList(),
             ),
           ],
         ),
@@ -304,14 +314,16 @@ class _LabelsDemoScreenState extends State<LabelsDemoScreen> {
                     '${_selectedSize.widthDots}×${_selectedSize.heightDots} dots',
                     style: TextStyle(
                       fontSize: 10,
-                      color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                      color:
+                          colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
                     ),
                   ),
                   Text(
                     '${_selectedSize.charsPerLine} chars/line',
                     style: TextStyle(
                       fontSize: 10,
-                      color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                      color:
+                          colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
                     ),
                   ),
                 ],
@@ -376,7 +388,8 @@ class _LabelsDemoScreenState extends State<LabelsDemoScreen> {
     );
   }
 
-  Widget _buildPrinterSettingsCard(ThemeData theme, ColorScheme colorScheme, bool isConnected) {
+  Widget _buildPrinterSettingsCard(
+      ThemeData theme, ColorScheme colorScheme, bool isConnected) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -390,7 +403,8 @@ class _LabelsDemoScreenState extends State<LabelsDemoScreen> {
                 Text('Printer Settings', style: theme.textTheme.titleMedium),
                 const Spacer(),
                 TextButton.icon(
-                  onPressed: isConnected && !_isPrinting ? _calibrateLabels : null,
+                  onPressed:
+                      isConnected && !_isPrinting ? _calibrateLabels : null,
                   icon: const Icon(Icons.tune, size: 18),
                   label: const Text('Calibrate'),
                 ),
@@ -437,7 +451,11 @@ class _LabelsDemoScreenState extends State<LabelsDemoScreen> {
                   Text('Density: $_density', style: theme.textTheme.labelLarge),
                   const SizedBox(width: 8),
                   Text(
-                    _density <= 2 ? '(light)' : _density >= 4 ? '(dark)' : '(normal)',
+                    _density <= 2
+                        ? '(light)'
+                        : _density >= 4
+                            ? '(dark)'
+                            : '(normal)',
                     style: theme.textTheme.bodySmall,
                   ),
                 ],
@@ -459,7 +477,11 @@ class _LabelsDemoScreenState extends State<LabelsDemoScreen> {
                   Text('Speed: $_speed', style: theme.textTheme.labelLarge),
                   const SizedBox(width: 8),
                   Text(
-                    _speed == 1 ? '(best quality)' : _speed == 3 ? '(fastest)' : '(balanced)',
+                    _speed == 1
+                        ? '(best quality)'
+                        : _speed == 3
+                            ? '(fastest)'
+                            : '(balanced)',
                     style: theme.textTheme.bodySmall,
                   ),
                 ],
@@ -555,7 +577,8 @@ class _LabelsDemoScreenState extends State<LabelsDemoScreen> {
                 const Icon(Icons.table_rows),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text('Two-Column Label', style: theme.textTheme.titleMedium),
+                  child: Text('Two-Column Label',
+                      style: theme.textTheme.titleMedium),
                 ),
                 IconButton(
                   icon: const Icon(Icons.add_circle_outline),
@@ -605,7 +628,8 @@ class _LabelsDemoScreenState extends State<LabelsDemoScreen> {
             }),
             const SizedBox(height: 8),
             FilledButton.icon(
-              onPressed: isConnected && !_isPrinting ? _printTwoColumnLabel : null,
+              onPressed:
+                  isConnected && !_isPrinting ? _printTwoColumnLabel : null,
               icon: const Icon(Icons.print),
               label: Text('Print on ${_selectedSize.displayName}'),
             ),
@@ -672,9 +696,8 @@ class _LabelsDemoScreenState extends State<LabelsDemoScreen> {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.info_outline, 
-                      size: 16, 
-                      color: theme.colorScheme.onSurfaceVariant),
+                    Icon(Icons.info_outline,
+                        size: 16, color: theme.colorScheme.onSurfaceVariant),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(

@@ -112,11 +112,14 @@ class _BasicPrintScreenState extends State<BasicPrintScreen> {
                       SegmentedButton<Sk58Align>(
                         segments: const [
                           ButtonSegment(
-                              value: Sk58Align.left, icon: Icon(Icons.format_align_left)),
+                              value: Sk58Align.left,
+                              icon: Icon(Icons.format_align_left)),
                           ButtonSegment(
-                              value: Sk58Align.center, icon: Icon(Icons.format_align_center)),
+                              value: Sk58Align.center,
+                              icon: Icon(Icons.format_align_center)),
                           ButtonSegment(
-                              value: Sk58Align.right, icon: Icon(Icons.format_align_right)),
+                              value: Sk58Align.right,
+                              icon: Icon(Icons.format_align_right)),
                         ],
                         selected: {_alignment},
                         onSelectionChanged: (v) =>
@@ -135,7 +138,8 @@ class _BasicPrintScreenState extends State<BasicPrintScreen> {
                         value: _fontSize,
                         items: const [
                           DropdownMenuItem(
-                              value: Sk58FontSize.normal, child: Text('Normal')),
+                              value: Sk58FontSize.normal,
+                              child: Text('Normal')),
                           DropdownMenuItem(
                               value: Sk58FontSize.wide, child: Text('Wide')),
                           DropdownMenuItem(

@@ -449,7 +449,8 @@ class Sk58Printer {
   /// Get characters per line for current effective print width.
   ///
   /// Returns 32 characters (for 48mm / 384 dots at 12 dots/char).
-  int get maxCharsPerLine => Sk58Specs.charsPerLine(Sk58Specs.effectivePrintWidthMm);
+  int get maxCharsPerLine =>
+      Sk58Specs.charsPerLine(Sk58Specs.effectivePrintWidthMm);
 }
 
 /// QR code error correction levels.

@@ -200,6 +200,8 @@ class ProcessedImage {
   /// Generate ESC/POS raster image commands.
   ///
   /// Uses GS v 0 command for raster bit image.
+  /// Note: This sends all image data in one block, which may cause
+  /// issues on printers with small buffers.
   List<int> toCommands() {
     final List<int> commands = [];
 
@@ -223,6 +225,75 @@ class ProcessedImage {
       yH,
     ]);
     commands.addAll(data);
+
+    return commands;
+  }
+
+  /// Generate ESC/POS bit image commands using ESC * (24-dot double density).
+  ///
+  /// Uses ESC * 33 nL nH d1...dk command for 24-dot double density mode.
+  /// This gives approximately 180 DPI horizontal resolution, close to the
+  /// printer's native 203 DPI.
+  ///
+  /// This sends the image in bands of 24 rows, which is more reliable
+  /// for printers with small buffers than sending everything at once.
+  List<int> toLineByLineCommands() {
+    final List<int> commands = [];
+
+    // ESC * m nL nH d1...dk
+    // m = 33: 24-dot double density (180 DPI horizontal)
+    //
+    // For 24-dot mode:
+    // - Each column needs 3 bytes (24 bits = 24 vertical dots)
+    // - nL nH = number of columns (width in dots)
+    // - Byte order per column: top 8 dots, middle 8 dots, bottom 8 dots
+
+    // Process image in bands of 24 rows
+    const int bandHeight = 24;
+
+    for (int bandStart = 0; bandStart < height; bandStart += bandHeight) {
+      // ESC * 33 nL nH
+      // nL nH = width in dots (little-endian)
+      final nL = width & 0xFF;
+      final nH = (width >> 8) & 0xFF;
+
+      commands.addAll([
+        0x1B, // ESC
+        0x2A, // *
+        33, // m = 33 (24-dot double density)
+        nL,
+        nH,
+      ]);
+
+      // For each column (x position)
+      for (int x = 0; x < width; x++) {
+        // 3 bytes per column (24 vertical dots)
+        for (int byteNum = 0; byteNum < 3; byteNum++) {
+          int columnByte = 0;
+          for (int bitPos = 0; bitPos < 8; bitPos++) {
+            final y = bandStart + byteNum * 8 + bitPos;
+            if (y < height) {
+              // Get the pixel from our row-based bitmap data
+              final byteIndex = y * widthBytes + (x ~/ 8);
+              final bitIndex = 7 - (x % 8); // MSB first in our data
+              if (byteIndex < data.length) {
+                final pixelSet = (data[byteIndex] >> bitIndex) & 1;
+                if (pixelSet == 1) {
+                  // Set bit in column byte (MSB = top)
+                  columnByte |= (0x80 >> bitPos);
+                }
+              }
+            }
+          }
+          commands.add(columnByte);
+        }
+      }
+
+      // Line feed after each band (advance 24 dots = 3mm at 203 DPI)
+      // ESC J n - advance paper by n/203 inches
+      // For 24 dots: ESC J 24
+      commands.addAll([0x1B, 0x4A, 24]);
+    }
 
     return commands;
   }

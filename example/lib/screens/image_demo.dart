@@ -17,8 +17,9 @@ class ImageDemoScreen extends StatefulWidget {
 class _ImageDemoScreenState extends State<ImageDemoScreen> {
   bool _isPrinting = false;
   bool _dithering = true;
+  bool _bandMode = true; // Send image in bands (better for mobile printers)
   int _threshold = 128;
-  int _maxWidth = 384;
+  int _maxWidth = 280; // ~35mm for 40mm label with margins
   Uint8List? _previewImage;
   final String _selectedAsset = 'assets/demo_logo.png';
 
@@ -63,6 +64,7 @@ class _ImageDemoScreenState extends State<ImageDemoScreen> {
         maxWidth: _maxWidth,
         dithering: _dithering,
         threshold: _threshold,
+        bandMode: _bandMode,
       );
       await widget.printer!.feedLines(3);
 
@@ -212,6 +214,14 @@ class _ImageDemoScreenState extends State<ImageDemoScreen> {
                     subtitle: const Text('Better grayscale quality'),
                     value: _dithering,
                     onChanged: (v) => setState(() => _dithering = v),
+                  ),
+
+                  // Band mode toggle (for mobile printers)
+                  SwitchListTile(
+                    title: const Text('Band Mode'),
+                    subtitle: const Text('Send image in bands (better for mobile printers)'),
+                    value: _bandMode,
+                    onChanged: (v) => setState(() => _bandMode = v),
                   ),
 
                   // Threshold slider

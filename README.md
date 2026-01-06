@@ -38,7 +38,7 @@ Add to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  sk58_printer: ^0.1.0
+  sk58_printer: ^0.2.0
 ```
 
 Then run:
@@ -119,7 +119,12 @@ await printer.printImage(imageBytes, dithering: false, threshold: 128);
 
 // Resize to specific width
 await printer.printImage(imageBytes, maxWidth: 200);
+
+// For mobile printers or small labels, use bandMode for reliable printing
+await printer.printImage(imageBytes, maxWidth: 280, bandMode: true);
 ```
+
+> **Note:** Use `bandMode: true` for mobile thermal printers or when printing on small labels (e.g., 40x15mm). This sends the image in smaller chunks using ESC * 33 (24-dot double density) which is more reliable for printers with limited buffers.
 
 ### Use Templates
 
@@ -233,7 +238,7 @@ flutter run
 | `printText(text, {style, align})` | Print text |
 | `printQrCode(data, {size})` | Print QR code |
 | `printBarcode(data, {type, height, width})` | Print barcode |
-| `printImage(bytes, {maxWidth, dithering})` | Print image |
+| `printImage(bytes, {maxWidth, dithering, bandMode})` | Print image |
 | `printTemplate(template)` | Print a template |
 | `build()` | Get a print builder |
 | `feedLines(n)` | Feed n lines |

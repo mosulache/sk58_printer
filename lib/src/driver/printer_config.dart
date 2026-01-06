@@ -125,7 +125,7 @@ enum Sk58LabelSize {
       (printableWidthDots / Sk58Specs.charWidthDots).floor();
 
   /// Human-readable name (e.g., "50×80mm").
-  String get displayName => '${widthMm}×${heightMm}mm';
+  String get displayName => '$widthMm×${heightMm}mm';
 
   /// Get label size by dimensions.
   ///

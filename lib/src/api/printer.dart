@@ -208,12 +208,16 @@ class Sk58Printer {
   /// [dithering] - Apply Floyd-Steinberg dithering for better grayscale. Default is true.
   /// [threshold] - Brightness threshold for B&W (0-255). Default is 128.
   /// [centered] - Whether to center the image. Default is true.
+  /// [bandMode] - If true, sends image in small bands (24 lines each) with delays.
+  ///              Recommended for mobile printers or printers with small buffers.
+  ///              Default is false for backwards compatibility.
   ///
   /// Example:
   /// ```dart
   /// final imageBytes = await File('logo.png').readAsBytes();
   /// await printer.printImage(imageBytes);
   /// await printer.printImage(imageBytes, maxWidth: 200); // smaller
+  /// await printer.printImage(imageBytes, bandMode: true); // for mobile printers
   /// ```
   ///
   /// Throws [ImageProcessingException] if image cannot be processed.
@@ -223,6 +227,7 @@ class Sk58Printer {
     bool dithering = true,
     int threshold = 128,
     bool centered = true,
+    bool bandMode = false,
   }) async {
     // Process image
     final processed = Sk58ImageProcessor.processImage(
@@ -232,25 +237,28 @@ class Sk58Printer {
       threshold: threshold,
     );
 
-    final List<int> commands = [];
-
-    // Center if needed
+    // Set alignment
     if (centered) {
-      commands.addAll(EscPosCommands.alignCenter);
+      await _connection.writeCommands(EscPosCommands.alignCenter);
     }
 
-    // Add image commands
-    commands.addAll(processed.toCommands());
+    if (bandMode) {
+      // Send image using ESC * (line-by-line mode)
+      // More compatible with simple thermal printers
+      final lineCommands = processed.toLineByLineCommands();
+      await _connection.writeCommands(lineCommands);
+    } else {
+      // Send entire image at once using GS v 0 (raster mode)
+      await _connection.writeCommands(processed.toCommands());
+    }
 
     // Add line feed
-    commands.addAll(EscPosCommands.lineFeed);
+    await _connection.writeCommands(EscPosCommands.lineFeed);
 
     // Reset alignment
     if (centered) {
-      commands.addAll(EscPosCommands.alignLeft);
+      await _connection.writeCommands(EscPosCommands.alignLeft);
     }
-
-    await _connection.writeCommands(commands);
   }
 
   /// Feeds the specified number of lines.

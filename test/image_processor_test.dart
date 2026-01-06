@@ -73,6 +73,55 @@ void main() {
       expect(commands.length, 8 + 4);
       expect(commands.sublist(8), data);
     });
+
+    test('toLineByLineCommands uses ESC * 33 (24-dot double density)', () {
+      // Create a 8x24 image (1 band of 24 lines)
+      final data = Uint8List(1 * 24); // 1 byte per row * 24 rows
+      final processed = ProcessedImage(
+        width: 8,
+        height: 24,
+        data: data,
+      );
+
+      final commands = processed.toLineByLineCommands();
+
+      // Should start with ESC * 33 header
+      expect(commands[0], 0x1B); // ESC
+      expect(commands[1], 0x2A); // *
+      expect(commands[2], 33); // m = 33 (24-dot double density)
+      expect(commands[3], 8); // nL (width low byte)
+      expect(commands[4], 0); // nH (width high byte)
+
+      // After header (5 bytes) comes 3 bytes per column * 8 columns = 24 bytes
+      // Then ESC J 24 (3 bytes) for line advance
+      // Total: 5 + 24 + 3 = 32 bytes for one band
+      expect(commands.length, 32);
+
+      // Check line advance at end: ESC J 24
+      expect(commands[29], 0x1B); // ESC
+      expect(commands[30], 0x4A); // J
+      expect(commands[31], 24); // 24 dots
+    });
+
+    test('toLineByLineCommands handles multiple bands', () {
+      // Create a 8x48 image (2 bands of 24 lines each)
+      final data = Uint8List(1 * 48); // 1 byte per row * 48 rows
+      final processed = ProcessedImage(
+        width: 8,
+        height: 48,
+        data: data,
+      );
+
+      final commands = processed.toLineByLineCommands();
+
+      // 2 bands, each: 5 header + (3 bytes * 8 columns) + 3 (ESC J 24) = 32 bytes
+      // Total: 2 * 32 = 64 bytes
+      expect(commands.length, 64);
+
+      // Check each band starts with ESC * 33
+      expect(commands[0], 0x1B); // First band ESC
+      expect(commands[32], 0x1B); // Second band ESC
+    });
   });
 
   group('Sk58ImageProcessor', () {

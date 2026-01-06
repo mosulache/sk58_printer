@@ -14,7 +14,6 @@
 
 ### Changed
 - `toLineByLineCommands()` in `ProcessedImage` now uses ESC * 33 instead of GS v 0 bands
-- Default `maxWidth` in example app reduced to 280px for better label compatibility
 
 ## 0.1.0
 

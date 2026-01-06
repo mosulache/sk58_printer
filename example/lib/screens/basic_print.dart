@@ -21,6 +21,7 @@ class _BasicPrintScreenState extends State<BasicPrintScreen> {
   bool _underline = false;
   Sk58FontSize _fontSize = Sk58FontSize.normal;
   bool _includeQr = true;
+  bool _labelMode = false; // If true, use GS FF for label paper
 
   @override
   void initState() {
@@ -57,7 +58,14 @@ class _BasicPrintScreenState extends State<BasicPrintScreen> {
       }
 
       await widget.printer!.printText(text, style: style, align: _alignment);
-      await widget.printer!.feedLines(3);
+
+      if (_labelMode) {
+        // For labels: use GS FF to advance to next label
+        await widget.printer!.printAndPeel();
+      } else {
+        // For continuous paper: just feed some lines
+        await widget.printer!.feedLines(3);
+      }
 
       _showMessage('Print successful!');
     } catch (e) {
@@ -154,24 +162,30 @@ class _BasicPrintScreenState extends State<BasicPrintScreen> {
                   const SizedBox(height: 8),
 
                   // Style toggles
-                  Row(
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
                     children: [
                       FilterChip(
                         label: const Text('Bold'),
                         selected: _bold,
                         onSelected: (v) => setState(() => _bold = v),
                       ),
-                      const SizedBox(width: 8),
                       FilterChip(
                         label: const Text('Underline'),
                         selected: _underline,
                         onSelected: (v) => setState(() => _underline = v),
                       ),
-                      const SizedBox(width: 8),
                       FilterChip(
                         label: const Text('QR Code'),
                         selected: _includeQr,
                         onSelected: (v) => setState(() => _includeQr = v),
+                      ),
+                      FilterChip(
+                        avatar: const Icon(Icons.label, size: 18),
+                        label: const Text('Label Paper'),
+                        selected: _labelMode,
+                        onSelected: (v) => setState(() => _labelMode = v),
                       ),
                     ],
                   ),

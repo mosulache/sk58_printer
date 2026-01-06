@@ -241,6 +241,8 @@ class Sk58Printer {
   /// [bandMode] - If true, sends image in small bands (24 lines each) with delays.
   ///              Recommended for mobile printers or printers with small buffers.
   ///              Default is false for backwards compatibility.
+  /// [feedAfter] - Whether to add a line feed after the image. Default is false.
+  ///               Set to true for continuous paper, false for labels.
   ///
   /// Example:
   /// ```dart
@@ -248,6 +250,7 @@ class Sk58Printer {
   /// await printer.printImage(imageBytes);
   /// await printer.printImage(imageBytes, maxWidth: 200); // smaller
   /// await printer.printImage(imageBytes, bandMode: true); // for mobile printers
+  /// await printer.printImage(imageBytes, feedAfter: false); // for labels - no extra feed
   /// ```
   ///
   /// Throws [ImageProcessingException] if image cannot be processed.
@@ -258,6 +261,7 @@ class Sk58Printer {
     int threshold = 128,
     bool centered = true,
     bool bandMode = false,
+    bool feedAfter = false,
   }) async {
     // Process image
     final processed = Sk58ImageProcessor.processImage(
@@ -282,8 +286,10 @@ class Sk58Printer {
       await _connection.writeCommands(processed.toCommands());
     }
 
-    // Add line feed
-    await _connection.writeCommands(EscPosCommands.lineFeed);
+    // Add line feed only if requested (for continuous paper)
+    if (feedAfter) {
+      await _connection.writeCommands(EscPosCommands.lineFeed);
+    }
 
     // Reset alignment
     if (centered) {
@@ -440,12 +446,45 @@ class Sk58Printer {
     await _connection.writeCommands(LabelCommands.setPaperType(type));
   }
 
-  /// Feed paper to the next label.
+  /// Feed paper to the next label using FS ( L command.
   ///
-  /// In label mode, this advances to the next label gap/mark.
-  /// In continuous mode, this acts as a form feed/page break.
-  Future<void> feedToNextLabel() async {
+  /// This is the recommended command for label printers with gap/black mark
+  /// detection. Uses FS ( L fn=67 to feed to print starting position.
+  ///
+  /// [extraFeedDots] - Optional extra dots to feed after reaching the label.
+  ///                   Use positive values to move print start down.
+  Future<void> feedToNextLabel({int extraFeedDots = 0}) async {
     await _connection.writeCommands(LabelCommands.feedToNextLabel);
+    if (extraFeedDots > 0) {
+      await _connection.writeCommands(LabelCommands.feedDots(extraFeedDots));
+    }
+  }
+
+  /// Simple form feed (FF - 0x0C).
+  ///
+  /// Standard ESC/POS command to feed to the beginning of the next label.
+  /// Use this as alternative if [feedToNextLabel] doesn't work on your printer.
+  Future<void> formFeed() async {
+    await _connection.writeCommands(LabelCommands.formFeed);
+  }
+
+  /// Print label and eject to peeling position (GS FF).
+  ///
+  /// Prints the current label, ejects to peeling position, blinks LED
+  /// and waits for user to peel. After pressing feed button, next label
+  /// is fed to starting position.
+  ///
+  /// Useful for single label issuance without waste.
+  Future<void> printAndPeel() async {
+    await _connection.writeCommands(LabelCommands.printAndPeel);
+  }
+
+  /// Feed paper by specific number of dots.
+  ///
+  /// [dots] - Number of dots to feed (0-255).
+  /// At 203 DPI: 8 dots ≈ 1mm.
+  Future<void> feedDots(int dots) async {
+    await _connection.writeCommands(LabelCommands.feedDots(dots));
   }
 
   /// Calibrate label detection.

@@ -67,11 +67,59 @@ class LabelCommands {
   // LABEL POSITIONING COMMANDS
   // ==========================================================================
 
-  /// Feed paper to next label (form feed).
+  /// Feed paper to next label using GS FF command.
   ///
-  /// In label mode, this advances paper to the next label gap/mark.
-  /// In continuous mode, this acts as a page break.
-  static List<int> get feedToNextLabel => [0x0C]; // FF (Form Feed)
+  /// This is the **recommended** command for SK58 label printers.
+  /// Prints the label and ejects to the next label position.
+  ///
+  /// Hex: 1D 0C
+  static List<int> get feedToNextLabel => [0x1D, 0x0C];
+
+  /// Alias for feedToNextLabel - GS FF command.
+  ///
+  /// Prints the label, ejects to peeling position.
+  /// On SK58 this correctly advances to the next label gap.
+  ///
+  /// Hex: 1D 0C
+  static List<int> get printAndPeel => [0x1D, 0x0C];
+
+  /// Simple form feed (FF).
+  ///
+  /// Standard ESC/POS command - may not work correctly on all label printers.
+  /// Use [feedToNextLabel] (GS FF) instead for reliable label feeding.
+  ///
+  /// Hex: 0C
+  static List<int> get formFeed => [0x0C];
+
+  /// FS ( L fn=67 - Alternative feed command.
+  ///
+  /// Feed to print starting position using label control function.
+  /// May not be supported by all SK58 printers.
+  ///
+  /// Hex: 1C 28 4C 02 00 43 32
+  static List<int> get feedToStartPosition => [
+    0x1C, 0x28, 0x4C, // FS ( L
+    0x02, 0x00, // pL pH (2 bytes follow)
+    0x43, // fn = 67 (feed to print starting position)
+    0x32, // m = 50 (parameter)
+  ];
+
+  /// Feed paper by specific number of dots.
+  ///
+  /// [dots] - Number of dots to feed (0-255).
+  /// Use this for fine-tuning label positioning.
+  static List<int> feedDots(int dots) {
+    // ESC J n - Print and feed paper n dots
+    return [0x1B, 0x4A, dots.clamp(0, 255)];
+  }
+
+  /// Feed paper by specific number of lines.
+  ///
+  /// [lines] - Number of lines to feed (0-255).
+  static List<int> feedLines(int lines) {
+    // ESC d n - Print and feed n lines
+    return [0x1B, 0x64, lines.clamp(0, 255)];
+  }
 
   /// Calibrate label detection.
   ///

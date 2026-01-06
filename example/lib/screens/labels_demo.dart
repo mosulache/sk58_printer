@@ -24,6 +24,7 @@ class _LabelsDemoScreenState extends State<LabelsDemoScreen> {
   bool _useAdvancedCommands =
       false; // Off by default - many printers don't support
 
+
   // Simple label fields
   final _titleController = TextEditingController(text: 'TORX 4x50');
   final _subtitleController = TextEditingController(text: 'Cap T20 - Inox A2');
@@ -76,8 +77,8 @@ class _LabelsDemoScreenState extends State<LabelsDemoScreen> {
       // Execute print action
       await printAction();
 
-      // Feed to next label (Form Feed - widely supported)
-      await widget.printer!.feedToNextLabel();
+      // Feed to next label using GS FF (print and peel) - works best on SK58!
+      await widget.printer!.printAndPeel();
 
       _showMessage('Label printed on ${_selectedSize.displayName}!');
     } catch (e) {
@@ -142,6 +143,70 @@ class _LabelsDemoScreenState extends State<LabelsDemoScreen> {
     }
   }
 
+  // ============================================================
+  // TEST FEED METHODS - to find which one works best
+  // ============================================================
+
+  /// Print label and test with FS ( L fn=67
+  Future<void> _printWithFsL() async {
+    await _printLabelWithFeedMethod('FS(L) fn=67', () async {
+      await widget.printer!.printRaw([0x1C, 0x28, 0x4C, 0x02, 0x00, 0x43, 0x32]);
+    });
+  }
+
+  /// Print label and test with simple FF (0x0C)
+  Future<void> _printWithFormFeed() async {
+    await _printLabelWithFeedMethod('FF (0x0C)', () async {
+      await widget.printer!.formFeed();
+    });
+  }
+
+  /// Print label and test with GS FF (print and peel)
+  Future<void> _printWithGsFF() async {
+    await _printLabelWithFeedMethod('GS FF (peel)', () async {
+      await widget.printer!.printAndPeel();
+    });
+  }
+
+  /// Print label and test with just line feeds (no gap detection)
+  Future<void> _printWithLineFeed() async {
+    // Calculate lines based on label height (approx 8 dots per line)
+    final lines = (_selectedSize.heightMm * 8 / 24).ceil() + 2; // +2 for gap
+    await _printLabelWithFeedMethod('ESC d $lines lines', () async {
+      await widget.printer!.printRaw([0x1B, 0x64, lines]);
+    });
+  }
+
+  /// Helper to print a label with a specific feed method
+  Future<void> _printLabelWithFeedMethod(
+      String methodName, Future<void> Function() feedMethod) async {
+    if (widget.printer == null || _isPrinting) return;
+
+    setState(() => _isPrinting = true);
+
+    try {
+      // Print a simple test label
+      final label = Sk58Label(
+        title: _titleController.text,
+        subtitle: _subtitleController.text.isNotEmpty
+            ? _subtitleController.text
+            : null,
+        qrData: null, // No QR for quick test
+        feedAfter: 0,
+      );
+      await widget.printer!.printTemplate(label);
+
+      // Apply the feed method being tested
+      await feedMethod();
+
+      _showMessage('Printed with $methodName');
+    } catch (e) {
+      _showMessage('Print failed: $e');
+    } finally {
+      setState(() => _isPrinting = false);
+    }
+  }
+
   void _addRow() {
     setState(() {
       _rows.add((TextEditingController(), TextEditingController()));
@@ -184,6 +249,10 @@ class _LabelsDemoScreenState extends State<LabelsDemoScreen> {
           _buildPrinterSettingsCard(theme, colorScheme, isConnected),
           const SizedBox(height: 16),
 
+          // Feed Test Card - TEST DIFFERENT FEED METHODS
+          _buildFeedTestCard(theme, colorScheme, isConnected),
+          const SizedBox(height: 16),
+
           // Simple Label Card
           _buildSimpleLabelCard(theme, isConnected),
           const SizedBox(height: 16),
@@ -199,6 +268,155 @@ class _LabelsDemoScreenState extends State<LabelsDemoScreen> {
             const SizedBox(height: 16),
             const Center(child: CircularProgressIndicator()),
           ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFeedTestCard(
+      ThemeData theme, ColorScheme colorScheme, bool isConnected) {
+    return Card(
+      color: colorScheme.tertiaryContainer.withValues(alpha: 0.3),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.science, color: colorScheme.tertiary),
+                const SizedBox(width: 8),
+                Text('🧪 Test Feed Methods',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: colorScheme.tertiary,
+                    )),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Print same label with different feed commands to find which works best for your printer.',
+              style: theme.textTheme.bodySmall,
+            ),
+            const SizedBox(height: 12),
+
+            // Feed method buttons in a grid
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                // FS ( L - recommended
+                _buildFeedTestButton(
+                  'FS(L) fn=67',
+                  '1C 28 4C...',
+                  Icons.star,
+                  isConnected,
+                  _printWithFsL,
+                  colorScheme,
+                  isRecommended: true,
+                ),
+
+                // Simple FF
+                _buildFeedTestButton(
+                  'Form Feed',
+                  '0C',
+                  Icons.arrow_downward,
+                  isConnected,
+                  _printWithFormFeed,
+                  colorScheme,
+                ),
+
+                // GS FF (peel mode)
+                _buildFeedTestButton(
+                  'GS FF (peel)',
+                  '1D 0C',
+                  Icons.content_cut,
+                  isConnected,
+                  _printWithGsFF,
+                  colorScheme,
+                ),
+
+                // Line feed based on label height
+                _buildFeedTestButton(
+                  'Line Feed',
+                  'ESC d n',
+                  Icons.format_line_spacing,
+                  isConnected,
+                  _printWithLineFeed,
+                  colorScheme,
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline,
+                      size: 16, color: colorScheme.onSurfaceVariant),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Each button prints "${_titleController.text}" then applies that feed method. '
+                      'Check which one correctly advances to the next label!',
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFeedTestButton(
+    String label,
+    String hex,
+    IconData icon,
+    bool isConnected,
+    VoidCallback onPressed,
+    ColorScheme colorScheme, {
+    bool isRecommended = false,
+  }) {
+    return OutlinedButton(
+      onPressed: isConnected && !_isPrinting ? onPressed : null,
+      style: OutlinedButton.styleFrom(
+        side: BorderSide(
+          color: isRecommended ? colorScheme.primary : colorScheme.outline,
+          width: isRecommended ? 2 : 1,
+        ),
+        backgroundColor:
+            isRecommended ? colorScheme.primaryContainer.withValues(alpha: 0.3) : null,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 16),
+              const SizedBox(width: 4),
+              Text(label),
+              if (isRecommended) ...[
+                const SizedBox(width: 4),
+                Icon(Icons.thumb_up, size: 12, color: colorScheme.primary),
+              ],
+            ],
+          ),
+          Text(
+            hex,
+            style: TextStyle(
+              fontSize: 10,
+              fontFamily: 'monospace',
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
         ],
       ),
     );

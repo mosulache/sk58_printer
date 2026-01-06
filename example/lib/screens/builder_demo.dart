@@ -15,6 +15,7 @@ class BuilderDemoScreen extends StatefulWidget {
 
 class _BuilderDemoScreenState extends State<BuilderDemoScreen> {
   bool _isPrinting = false;
+  bool _labelMode = false; // If true, use GS FF for label paper
 
   Future<void> _printReceipt() async {
     if (widget.printer == null || _isPrinting) return;
@@ -45,8 +46,12 @@ class _BuilderDemoScreenState extends State<BuilderDemoScreen> {
           .feed(1)
           .text('Thank you!', align: Sk58Align.center)
           .qrCode('https://demo-store.example.com/receipt/12345')
-          .feed(3)
+          .feed(_labelMode ? 0 : 3)
           .execute();
+
+      if (_labelMode) {
+        await widget.printer!.printAndPeel();
+      }
 
       _showMessage('Receipt printed!');
     } catch (e) {
@@ -71,8 +76,12 @@ class _BuilderDemoScreenState extends State<BuilderDemoScreen> {
           .text('Location: A-15-3')
           .newLine()
           .barcode('WPX2024001', type: BarcodeType.code128, height: 60)
-          .feed(3)
+          .feed(_labelMode ? 0 : 3)
           .execute();
+
+      if (_labelMode) {
+        await widget.printer!.printAndPeel();
+      }
 
       _showMessage('Label printed!');
     } catch (e) {
@@ -129,9 +138,14 @@ class _BuilderDemoScreenState extends State<BuilderDemoScreen> {
           .line();
 
       // QR at the end
-      builder.feed(1).qrCode('Builder Pattern Demo', size: 6).feed(3);
+      builder.feed(1).qrCode('Builder Pattern Demo', size: 6).feed(_labelMode ? 0 : 3);
 
       await builder.execute();
+
+      if (_labelMode) {
+        await widget.printer!.printAndPeel();
+      }
+
       _showMessage('Custom print complete!');
     } catch (e) {
       _showMessage('Print failed: $e');
@@ -156,6 +170,18 @@ class _BuilderDemoScreenState extends State<BuilderDemoScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // Label mode toggle
+          Card(
+            child: SwitchListTile(
+              title: const Text('Label Paper Mode'),
+              subtitle: const Text('Use GS FF to feed to next label after print'),
+              secondary: const Icon(Icons.label),
+              value: _labelMode,
+              onChanged: (v) => setState(() => _labelMode = v),
+            ),
+          ),
+          const SizedBox(height: 16),
+
           // Info card
           Card(
             child: Padding(

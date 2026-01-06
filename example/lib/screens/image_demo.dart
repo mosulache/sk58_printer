@@ -25,6 +25,17 @@ class _ImageDemoScreenState extends State<ImageDemoScreen> {
   Uint8List? _previewImage;
   final String _selectedAsset = 'assets/demo_logo.png';
 
+  // Label mode settings
+  bool _labelMode = false; // If true, feed to next label after print
+  int _topMarginDots = 0; // Dots to feed before printing (8 dots = 1mm)
+
+  // Label dimensions for preview (in dots at 8 dots/mm)
+  // Default: 40x15mm label = 320x120 dots
+  int _labelWidthDots = 320;
+  int _labelHeightDots = 120;
+  // Dead zone at top where printer can't print (typically ~4mm = 32 dots)
+  int _deadZoneDots = 32;
+
   Future<void> _loadDemoImage() async {
     try {
       final data = await rootBundle.load(_selectedAsset);
@@ -61,14 +72,27 @@ class _ImageDemoScreenState extends State<ImageDemoScreen> {
         imageData = _createSimpleTestImage();
       }
 
+      // Feed top margin if set (for fine-tuning label position)
+      if (_topMarginDots > 0) {
+        await widget.printer!.feedDots(_topMarginDots);
+      }
+
       await widget.printer!.printImage(
         imageData,
         maxWidth: _maxWidth,
         dithering: _dithering,
         threshold: _threshold,
         bandMode: _bandMode,
+        feedAfter: !_labelMode, // Don't add extra feed for labels
       );
-      await widget.printer!.feedLines(3);
+
+      if (_labelMode) {
+        // For labels: use GS FF (print and peel) - works best on SK58!
+        await widget.printer!.printAndPeel();
+      } else {
+        // For continuous paper: just feed some lines
+        await widget.printer!.feedLines(3);
+      }
 
       _showMessage('Image printed!');
     } on ImageProcessingException catch (e) {
@@ -142,6 +166,227 @@ class _ImageDemoScreenState extends State<ImageDemoScreen> {
     );
   }
 
+  /// Builds the realistic label preview widget
+  Widget _buildLabelPreview() {
+    // Calculate printable area (label height minus dead zone)
+    final printableHeight = _labelHeightDots - _deadZoneDots;
+    final topMarginInPreview = _topMarginDots.clamp(0, printableHeight);
+
+    // Scale factor to fit in screen (max 350px width for display)
+    final maxDisplayWidth = 350.0;
+    final scale = _labelWidthDots > maxDisplayWidth
+        ? maxDisplayWidth / _labelWidthDots
+        : 1.0;
+
+    final displayWidth = _labelWidthDots * scale;
+    final displayDeadZone = _deadZoneDots * scale;
+    final displayPrintableHeight = printableHeight * scale;
+    final displayTopMargin = topMarginInPreview * scale;
+
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade600, width: 2),
+        borderRadius: BorderRadius.circular(4),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(2),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Dead zone (grey - can't print here)
+            if (_deadZoneDots > 0)
+              Container(
+                width: displayWidth,
+                height: displayDeadZone,
+                color: Colors.grey.shade300,
+                child: displayDeadZone >= 20
+                    ? Center(
+                        child: Text(
+                          '⛔ NO PRINT',
+                          style: TextStyle(
+                            fontSize: 10 * scale.clamp(0.7, 1.0),
+                            color: Colors.grey.shade600,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      )
+                    : null,
+              ),
+
+            // Printable area (white background with image overlay)
+            ClipRect(
+              child: Container(
+                width: displayWidth,
+                height: displayPrintableHeight.clamp(20, 500),
+                color: Colors.white,
+                child: Stack(
+                  clipBehavior: Clip.hardEdge, // Clip image to label bounds
+                  children: [
+                    // Top margin indicator (if set)
+                    if (displayTopMargin > 0)
+                      Positioned(
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        height: displayTopMargin,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.blue.withValues(alpha: 0.1),
+                            border: Border(
+                              bottom: BorderSide(
+                                color: Colors.blue.shade300,
+                                width: 1,
+                                style: BorderStyle.solid,
+                              ),
+                            ),
+                          ),
+                          child: displayTopMargin >= 12
+                              ? Center(
+                                  child: Text(
+                                    'margin ${(_topMarginDots / 8).toStringAsFixed(1)}mm',
+                                    style: TextStyle(
+                                      fontSize: 8 * scale.clamp(0.7, 1.0),
+                                      color: Colors.blue.shade400,
+                                    ),
+                                  ),
+                                )
+                              : null,
+                        ),
+                      ),
+
+                    // Image preview - scaled to match label scale
+                    // Image fills the available width, scaled proportionally
+                    if (_previewImage != null)
+                      Positioned(
+                        top: displayTopMargin,
+                        left: 0,
+                        right: 0, // Fill width
+                        child: Image.memory(
+                          _previewImage!,
+                          fit: BoxFit.fitWidth, // Scale to fit label width
+                          alignment: Alignment.topLeft,
+                          errorBuilder: (_, __, ___) => const Icon(
+                            Icons.broken_image,
+                            size: 32,
+                            color: Colors.red,
+                          ),
+                        ),
+                      )
+                    else
+                      Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.image, size: 32 * scale, color: Colors.grey.shade400),
+                            const SizedBox(height: 4),
+                            Text(
+                              'No image',
+                              style: TextStyle(
+                                fontSize: 10 * scale.clamp(0.7, 1.0),
+                                color: Colors.grey.shade500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Builds a legend item for the preview
+  Widget _buildLegendItem(Color color, String label) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 16,
+          height: 16,
+          decoration: BoxDecoration(
+            color: color,
+            border: Border.all(color: Colors.grey.shade400),
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 4),
+        Text(label, style: const TextStyle(fontSize: 11)),
+      ],
+    );
+  }
+
+  /// Builds a label size preset button
+  Widget _buildLabelPreset(String label, int widthDots, int heightDots) {
+    final isSelected = _labelWidthDots == widthDots && _labelHeightDots == heightDots;
+    return FilterChip(
+      label: Text(label, style: const TextStyle(fontSize: 11)),
+      selected: isSelected,
+      onSelected: (_) => setState(() {
+        _labelWidthDots = widthDots;
+        _labelHeightDots = heightDots;
+      }),
+      visualDensity: VisualDensity.compact,
+    );
+  }
+
+  /// Builds a warning widget if image doesn't fit in printable area
+  Widget _buildFitWarning() {
+    // We don't know actual image dimensions without decoding,
+    // but we can show the printable area info
+    final printableHeight = _labelHeightDots - _deadZoneDots - _topMarginDots;
+    final printableWidth = _labelWidthDots.clamp(0, _maxWidth);
+
+    // For 40x15mm label with 4mm dead zone:
+    // Printable area = 40x11mm = 320x88 dots
+    final printableHeightMm = (printableHeight / 8).toStringAsFixed(1);
+    final printableWidthMm = (printableWidth / 8).toStringAsFixed(1);
+
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.amber.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.amber.shade300),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Icon(Icons.info_outline, size: 16, color: Colors.amber.shade700),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Printable area: ${printableWidthMm}x${printableHeightMm}mm ($printableWidth x $printableHeight dots)',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.amber.shade900,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Your image should be max $printableWidth x $printableHeight pixels to fit perfectly!',
+            style: TextStyle(fontSize: 11, color: Colors.amber.shade800),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isConnected = widget.printer?.isConnected == true;
@@ -151,47 +396,77 @@ class _ImageDemoScreenState extends State<ImageDemoScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Preview card
+          // Preview card - realistic label simulation
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  Text('Image Preview',
+                  Text('Label Preview (Realistic)',
                       style: Theme.of(context).textTheme.titleMedium),
-                  const SizedBox(height: 12),
-                  Container(
-                    width: 200,
-                    height: 200,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey),
-                      color: Colors.grey[100],
-                    ),
-                    child: _previewImage != null
-                        ? Image.memory(
-                            _previewImage!,
-                            fit: BoxFit.contain,
-                            errorBuilder: (_, __, ___) => const Center(
-                              child: Icon(Icons.broken_image, size: 64),
-                            ),
-                          )
-                        : const Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.image, size: 64, color: Colors.grey),
-                                SizedBox(height: 8),
-                                Text('No image\n(will use test pattern)',
-                                    textAlign: TextAlign.center),
-                              ],
-                            ),
-                          ),
-                  ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 4),
                   Text(
-                    'Add assets/demo_logo.png to test\nor use test pattern',
-                    style: Theme.of(context).textTheme.bodySmall,
-                    textAlign: TextAlign.center,
+                    'Label: ${(_labelWidthDots / 8).round()}x${(_labelHeightDots / 8).round()}mm • Dead zone: ${(_deadZoneDots / 8).toStringAsFixed(1)}mm',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Realistic label preview with dead zone
+                  _buildLabelPreview(),
+
+                  const SizedBox(height: 12),
+
+                  // Legend
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildLegendItem(Colors.grey.shade300, 'Dead zone (no print)'),
+                      const SizedBox(width: 16),
+                      _buildLegendItem(Colors.white, 'Printable area'),
+                    ],
+                  ),
+
+                  // Warning if image doesn't fit
+                  if (_previewImage != null) ...[
+                    const SizedBox(height: 8),
+                    _buildFitWarning(),
+                  ],
+
+                  const SizedBox(height: 12),
+
+                  // Label size presets
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    alignment: WrapAlignment.center,
+                    children: [
+                      _buildLabelPreset('40x15', 320, 120),
+                      _buildLabelPreset('50x25', 400, 200),
+                      _buildLabelPreset('50x30', 400, 240),
+                      _buildLabelPreset('40x30', 320, 240),
+                    ],
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  // Dead zone slider
+                  Row(
+                    children: [
+                      const Text('Dead zone: ', style: TextStyle(fontSize: 12)),
+                      Expanded(
+                        child: Slider(
+                          value: _deadZoneDots.toDouble(),
+                          min: 0,
+                          max: 64, // Max 8mm
+                          divisions: 64,
+                          onChanged: (v) => setState(() => _deadZoneDots = v.round()),
+                        ),
+                      ),
+                      Text('${(_deadZoneDots / 8).toStringAsFixed(1)}mm',
+                          style: const TextStyle(fontSize: 12)),
+                    ],
                   ),
                 ],
               ),
@@ -249,6 +524,33 @@ class _ImageDemoScreenState extends State<ImageDemoScreen> {
                     divisions: 28,
                     onChanged: (v) => setState(() => _maxWidth = v.round()),
                   ),
+
+                  const Divider(),
+
+                  // Label mode toggle
+                  SwitchListTile(
+                    title: const Text('Label Paper Mode'),
+                    subtitle: const Text('Use GS FF to feed to next label after print'),
+                    value: _labelMode,
+                    onChanged: (v) => setState(() => _labelMode = v),
+                  ),
+
+                  // Top margin control (for fine-tuning where print starts)
+                  if (_labelMode) ...[
+                    const SizedBox(height: 8),
+                    Text('Top Margin: $_topMarginDots dots (${(_topMarginDots / 8).toStringAsFixed(1)}mm)'),
+                    Slider(
+                      value: _topMarginDots.toDouble(),
+                      min: 0,
+                      max: 80, // Max 10mm
+                      divisions: 80,
+                      onChanged: (v) => setState(() => _topMarginDots = v.round()),
+                    ),
+                    Text(
+                      'Use to fine-tune vertical position on label',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
                 ],
               ),
             ),

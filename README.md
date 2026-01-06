@@ -188,6 +188,56 @@ await printer.printText(
 // Available sizes: normal, wide, tall, large
 ```
 
+## Printer Specifications (SK58)
+
+### Print Area
+
+| Specification | Value |
+|---------------|-------|
+| Paper width | 58mm |
+| **Effective print width** | **48mm (384 dots)** |
+| Resolution | 203 DPI (8 dots/mm) |
+| Max characters per line | 32 (normal font) |
+
+### Label Printing - Dead Zone
+
+⚠️ **Important:** When printing on label paper, the printer has a **non-printable "dead zone"** at the top of each label where the print head cannot reach.
+
+| Label Type | Dead Zone | Notes |
+|------------|-----------|-------|
+| Gap labels | ~4mm (32 dots) | Empirically measured |
+| Black mark labels | ~3-5mm | Varies by printer |
+
+**Example for 40x15mm label:**
+- Total label height: 15mm (120 dots)
+- Dead zone: ~4mm (32 dots)  
+- **Actual printable height: ~11mm (88 dots)**
+
+**Image sizing recommendation:**
+```
+For 40x15mm label → Image should be max 320 x 88 pixels
+For 50x25mm label → Image should be max 384 x 168 pixels
+For 50x30mm label → Image should be max 384 x 208 pixels
+```
+
+The example app includes a realistic label preview that shows:
+- The dead zone (grey area marked "NO PRINT")
+- The actual printable area (white)
+- How your image fits on the label
+
+### Label Commands
+
+```dart
+// Print image on label (no extra feed after image)
+await printer.printImage(imageBytes, bandMode: true, feedAfter: false);
+
+// Eject to next label (GS FF command)
+await printer.printAndPeel();
+
+// Or use form feed
+await printer.formFeed();
+```
+
 ## Platform Setup
 
 ### Android

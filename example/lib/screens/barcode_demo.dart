@@ -20,6 +20,7 @@ class _BarcodeDemoScreenState extends State<BarcodeDemoScreen> {
   int _height = 80;
   int _width = 3;
   BarcodeHriPosition _hriPosition = BarcodeHriPosition.below;
+  bool _labelMode = false; // If true, use GS FF for label paper
 
   @override
   void initState() {
@@ -78,7 +79,11 @@ class _BarcodeDemoScreenState extends State<BarcodeDemoScreen> {
         hriPosition: _hriPosition,
       );
 
-      await widget.printer!.feedLines(3);
+      if (_labelMode) {
+        await widget.printer!.printAndPeel();
+      } else {
+        await widget.printer!.feedLines(3);
+      }
       _showMessage('Barcode printed!');
     } on BarcodeException catch (e) {
       _showMessage('Invalid data: ${e.message}');
@@ -254,6 +259,16 @@ class _BarcodeDemoScreenState extends State<BarcodeDemoScreen> {
                         onChanged: (v) => setState(() => _hriPosition = v!),
                       ),
                     ],
+                  ),
+
+                  // Label mode toggle
+                  const SizedBox(height: 8),
+                  SwitchListTile(
+                    title: const Text('Label Paper Mode'),
+                    subtitle: const Text('Use GS FF to feed to next label'),
+                    value: _labelMode,
+                    onChanged: (v) => setState(() => _labelMode = v),
+                    contentPadding: EdgeInsets.zero,
                   ),
                 ],
               ),

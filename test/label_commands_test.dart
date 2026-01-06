@@ -42,8 +42,36 @@ void main() {
       );
     });
 
-    test('feedToNextLabel returns form feed', () {
-      expect(LabelCommands.feedToNextLabel, [0x0C]);
+    test('feedToNextLabel returns GS FF command', () {
+      // GS FF - The best command for SK58 label feeding
+      // Hex: 1D 0C
+      expect(LabelCommands.feedToNextLabel, [0x1D, 0x0C]);
+    });
+
+    test('printAndPeel is alias for feedToNextLabel (GS FF)', () {
+      expect(LabelCommands.printAndPeel, [0x1D, 0x0C]);
+      expect(LabelCommands.printAndPeel, LabelCommands.feedToNextLabel);
+    });
+
+    test('formFeed returns simple form feed (FF)', () {
+      expect(LabelCommands.formFeed, [0x0C]);
+    });
+
+    test('feedToStartPosition returns FS ( L fn=67 command', () {
+      // FS ( L pL pH fn m - Alternative feed command
+      // Hex: 1C 28 4C 02 00 43 32
+      expect(LabelCommands.feedToStartPosition,
+          [0x1C, 0x28, 0x4C, 0x02, 0x00, 0x43, 0x32]);
+    });
+
+    test('feedDots returns ESC J n command', () {
+      expect(LabelCommands.feedDots(24), [0x1B, 0x4A, 24]);
+      expect(LabelCommands.feedDots(0), [0x1B, 0x4A, 0]);
+      expect(LabelCommands.feedDots(300), [0x1B, 0x4A, 255]); // Clamped
+    });
+
+    test('feedLines returns ESC d n command', () {
+      expect(LabelCommands.feedLines(5), [0x1B, 0x64, 5]);
     });
 
     test('calibrateLabels returns GS ( F command', () {

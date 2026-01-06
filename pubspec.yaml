@@ -1,6 +1,6 @@
 name: sk58_printer
 description: Flutter library for SK58 thermal printer via Bluetooth. Supports Android and Linux.
-version: 0.2.0
+version: 0.2.2
 homepage: https://github.com/mosulache/sk58_printer
 repository: https://github.com/mosulache/sk58_printer
 

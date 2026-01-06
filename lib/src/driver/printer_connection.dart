@@ -24,11 +24,36 @@ class Sk58Connection {
   bool _isConnected = false;
   bool _servicesDiscovered = false;
 
+  /// Current chunk size for data transmission.
+  int _chunkSize = Sk58Constants.chunkSize;
+
+  /// Current delay between chunks in milliseconds.
+  int _chunkDelayMs = Sk58Constants.chunkDelayMs;
+
   /// The currently connected device, if any.
   BleDevice? get connectedDevice => _connectedDevice;
 
   /// Whether currently connected to a printer.
   bool get isConnected => _isConnected;
+
+  /// Current chunk size in bytes.
+  int get chunkSize => _chunkSize;
+
+  /// Current delay between chunks in milliseconds.
+  int get chunkDelayMs => _chunkDelayMs;
+
+  /// Set transmission parameters for tuning performance.
+  ///
+  /// [chunkSize] - Bytes per chunk (10-200). Larger = faster but may cause issues.
+  /// [chunkDelayMs] - Delay between chunks in ms (10-200). Smaller = faster but may cause issues.
+  void setTransmissionParams({int? chunkSize, int? chunkDelayMs}) {
+    if (chunkSize != null) {
+      _chunkSize = chunkSize.clamp(10, 200);
+    }
+    if (chunkDelayMs != null) {
+      _chunkDelayMs = chunkDelayMs.clamp(10, 200);
+    }
+  }
 
   /// Connects to the specified Bluetooth device.
   ///
@@ -168,12 +193,11 @@ class Sk58Connection {
 
     final deviceId = _connectedDevice!.deviceId;
     final totalBytes = data.length;
-    const chunkSize = Sk58Constants.chunkSize;
 
-    debugPrint('SK58: Sending $totalBytes bytes in chunks of $chunkSize...');
+    debugPrint('SK58: Sending $totalBytes bytes in chunks of $_chunkSize (delay: ${_chunkDelayMs}ms)...');
 
-    for (var i = 0; i < totalBytes; i += chunkSize) {
-      final end = (i + chunkSize < totalBytes) ? i + chunkSize : totalBytes;
+    for (var i = 0; i < totalBytes; i += _chunkSize) {
+      final end = (i + _chunkSize < totalBytes) ? i + _chunkSize : totalBytes;
       final chunk = data.sublist(i, end);
 
       try {
@@ -187,12 +211,11 @@ class Sk58Connection {
         );
 
         debugPrint(
-            'SK58: Sent chunk ${(i ~/ chunkSize) + 1}: ${chunk.length} bytes');
+            'SK58: Sent chunk ${(i ~/ _chunkSize) + 1}: ${chunk.length} bytes');
 
         // Delay between chunks
         if (end < totalBytes) {
-          await Future.delayed(
-              const Duration(milliseconds: Sk58Constants.chunkDelayMs));
+          await Future.delayed(Duration(milliseconds: _chunkDelayMs));
         }
       } catch (e) {
         debugPrint('SK58: Error writing chunk: $e');

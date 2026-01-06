@@ -22,13 +22,16 @@ class Sk58Constants {
 
   /// Size of data chunks sent to the printer (in bytes).
   ///
-  /// The printer expects data in small chunks. Larger chunks may fail.
+  /// Mobile thermal printers typically require exactly 20 bytes per BLE write.
+  /// This appears to be a BLE MTU or firmware limitation.
+  /// DO NOT increase this value - it will cause print failures.
   static const int chunkSize = 20;
 
   /// Delay between sending chunks (in milliseconds).
   ///
-  /// This delay prevents buffer overflow on the printer.
-  static const int chunkDelayMs = 100;
+  /// 10ms is sufficient for most SK58 printers and provides good speed.
+  /// Increase to 50-100ms if you experience print issues.
+  static const int chunkDelayMs = 10;
 
   /// Default scan timeout (in seconds).
   static const int defaultScanTimeoutSeconds = 10;

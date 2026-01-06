@@ -65,6 +65,36 @@ class Sk58Printer {
   /// The connected device, if any.
   BleDevice? get device => _connection.connectedDevice;
 
+  /// Current chunk size in bytes for BLE transmission.
+  int get chunkSize => _connection.chunkSize;
+
+  /// Current delay between chunks in milliseconds.
+  int get chunkDelayMs => _connection.chunkDelayMs;
+
+  /// Set transmission parameters for tuning performance.
+  ///
+  /// Use this to optimize printing speed for your specific printer.
+  /// Larger chunks and smaller delays = faster, but may cause issues
+  /// on printers with small buffers.
+  ///
+  /// [chunkSize] - Bytes per BLE write (10-200). Default is 20.
+  /// [chunkDelayMs] - Delay between writes in ms (10-200). Default is 100.
+  ///
+  /// Example:
+  /// ```dart
+  /// // Try faster settings
+  /// printer.setTransmissionParams(chunkSize: 50, chunkDelayMs: 50);
+  ///
+  /// // If issues occur, use safer settings
+  /// printer.setTransmissionParams(chunkSize: 20, chunkDelayMs: 100);
+  /// ```
+  void setTransmissionParams({int? chunkSize, int? chunkDelayMs}) {
+    _connection.setTransmissionParams(
+      chunkSize: chunkSize,
+      chunkDelayMs: chunkDelayMs,
+    );
+  }
+
   /// Initializes the printer to default state.
   Future<void> _initialize() async {
     await _connection.writeCommands(EscPosCommands.initialize);

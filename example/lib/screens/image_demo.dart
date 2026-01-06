@@ -20,6 +20,8 @@ class _ImageDemoScreenState extends State<ImageDemoScreen> {
   bool _bandMode = true; // Send image in bands (better for mobile printers)
   int _threshold = 128;
   int _maxWidth = 384; // Full width (48mm effective print area)
+  int _chunkSize = 20; // BLE chunk size in bytes (must be 20 for most printers)
+  int _chunkDelayMs = 10; // Delay between chunks in ms
   Uint8List? _previewImage;
   final String _selectedAsset = 'assets/demo_logo.png';
 
@@ -246,6 +248,100 @@ class _ImageDemoScreenState extends State<ImageDemoScreen> {
                     max: 384,
                     divisions: 28,
                     onChanged: (v) => setState(() => _maxWidth = v.round()),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // BLE Transmission Settings card
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('BLE Transmission (Speed Tuning)',
+                      style: Theme.of(context).textTheme.titleMedium),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Increase for speed, decrease if printing fails',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Chunk size slider
+                  Text('Chunk Size: $_chunkSize bytes'),
+                  Slider(
+                    value: _chunkSize.toDouble(),
+                    min: 10,
+                    max: 200,
+                    divisions: 19,
+                    onChanged: (v) {
+                      setState(() => _chunkSize = v.round());
+                      widget.printer?.setTransmissionParams(chunkSize: _chunkSize);
+                    },
+                  ),
+
+                  // Delay slider
+                  Text('Chunk Delay: $_chunkDelayMs ms'),
+                  Slider(
+                    value: _chunkDelayMs.toDouble(),
+                    min: 10,
+                    max: 200,
+                    divisions: 19,
+                    onChanged: (v) {
+                      setState(() => _chunkDelayMs = v.round());
+                      widget.printer?.setTransmissionParams(chunkDelayMs: _chunkDelayMs);
+                    },
+                  ),
+
+                  // Quick presets
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    children: [
+                      ActionChip(
+                        label: const Text('Fast (20/10)'),
+                        onPressed: () {
+                          setState(() {
+                            _chunkSize = 20;
+                            _chunkDelayMs = 10;
+                          });
+                          widget.printer?.setTransmissionParams(
+                            chunkSize: 20,
+                            chunkDelayMs: 10,
+                          );
+                        },
+                      ),
+                      ActionChip(
+                        label: const Text('Medium (20/50)'),
+                        onPressed: () {
+                          setState(() {
+                            _chunkSize = 20;
+                            _chunkDelayMs = 50;
+                          });
+                          widget.printer?.setTransmissionParams(
+                            chunkSize: 20,
+                            chunkDelayMs: 50,
+                          );
+                        },
+                      ),
+                      ActionChip(
+                        label: const Text('Safe (20/100)'),
+                        onPressed: () {
+                          setState(() {
+                            _chunkSize = 20;
+                            _chunkDelayMs = 100;
+                          });
+                          widget.printer?.setTransmissionParams(
+                            chunkSize: 20,
+                            chunkDelayMs: 100,
+                          );
+                        },
+                      ),
+                    ],
                   ),
                 ],
               ),

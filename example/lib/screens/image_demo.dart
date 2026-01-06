@@ -19,7 +19,7 @@ class _ImageDemoScreenState extends State<ImageDemoScreen> {
   bool _dithering = true;
   bool _bandMode = true; // Send image in bands (better for mobile printers)
   int _threshold = 128;
-  int _maxWidth = 280; // ~35mm for 40mm label with margins
+  int _maxWidth = 384; // Full width (48mm effective print area)
   Uint8List? _previewImage;
   final String _selectedAsset = 'assets/demo_logo.png';
 
